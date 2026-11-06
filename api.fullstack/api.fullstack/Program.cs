@@ -7,6 +7,18 @@ public class Program
         var builder = WebApplication.CreateBuilder(args);
 
         // Add services to the container.
+        builder.Services.AddHttpClient();
+
+        // CORS policy
+        builder.Services.AddCors(options =>
+        {
+            options.AddPolicy("AllowNuxt", policy =>
+            {
+                policy.WithOrigins("http://localhost:3000")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod();
+            });
+        });
 
         builder.Services.AddControllers();
         // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -19,6 +31,7 @@ public class Program
         {
             app.MapOpenApi();
         }
+        app.UseCors("AllowNuxt");
 
         app.UseHttpsRedirection();
 
