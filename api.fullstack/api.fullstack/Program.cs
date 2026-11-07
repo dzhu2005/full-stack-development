@@ -44,7 +44,13 @@ public class Program
             app.MapOpenApi();
         }
 
-        app.UseHttpsRedirection();
+        // The documented development flow is plain HTTP on http://localhost:5286. Redirecting to
+        // HTTPS breaks server-to-server calls (e.g. the Nuxt SSR fetch) that do not trust the local
+        // development certificate, so HTTPS redirection is only enforced outside development.
+        if (!app.Environment.IsDevelopment())
+        {
+            app.UseHttpsRedirection();
+        }
 
         app.UseCors(FrontendCorsPolicy);
 

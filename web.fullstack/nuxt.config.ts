@@ -5,6 +5,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   css: ['~/assets/css/main.css'],
+  runtimeConfig: {
+    public: {
+      // Override with NUXT_PUBLIC_API_BASE when the API runs elsewhere.
+      apiBase: 'http://localhost:5286'
+    }
+  },
   app: {
     head: {
       link: [
