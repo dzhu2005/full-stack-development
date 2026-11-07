@@ -1,6 +1,6 @@
 @api.fullstack_HostAddress = http://localhost:5286
 
-GET {{api.fullstack_HostAddress}}/weatherforecast/
+GET {{api.fullstack_HostAddress}}/Post/search?q=qui
 Accept: application/json
 
 ###
