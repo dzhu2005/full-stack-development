@@ -4,3 +4,8 @@ GET {{api.fullstack_HostAddress}}/weatherforecast/
 Accept: application/json
 
 ###
+
+GET {{api.fullstack_HostAddress}}/Post/search?q=qui
+Accept: application/json
+
+###
