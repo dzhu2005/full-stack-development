@@ -6,10 +6,47 @@ const router = useRouter()
 
 const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
 const submitted = computed(() => (typeof route.query.q === 'string' ? route.query.q : ''))
+const isLoading = ref(false)
+const errorMsg = ref<string | null>(null)
+const results = ref<Array<{ userId: number, posts: Array<{ id: number, title: string, body: string }> }>>([])
+const lastSearchQuery = ref('')
 
-function onSearch() {
+onMounted(() => {
+  if (submitted.value && !isLoading.value) {
+    onSearch()
+  }
+})
+
+async function onSearch() {
   const q = query.value.trim()
-  router.replace({ query: q ? { q } : {} })
+
+  if (isLoading.value) return
+  if (q === lastSearchQuery.value) return
+
+  if (!q) {
+    results.value = []
+    lastSearchQuery.value = ''
+    return
+  }
+
+  isLoading.value = true
+  lastSearchQuery.value = q
+  errorMsg.value = null
+
+  router.replace({ query: { q } })
+
+  try {
+    results.value = await $fetch(
+      `http://localhost:5286/post/search?q=${encodeURIComponent(q)}`,
+      { method: 'GET' }
+    )
+  } catch (error) {
+    errorMsg.value = 'An error occurred while searching.'
+    results.value = []
+    lastSearchQuery.value = ''
+  } finally {
+    isLoading.value = false
+  }
 }
 </script>
 
@@ -44,6 +81,7 @@ function onSearch() {
             class="h-12 shrink-0 rounded-r-lg border-2 border-ink bg-moss px-5 font-semibold text-field transition-colors hover:bg-moss-deep active:bg-ink"
           >
             Search
+            
           </button>
         </form>
       </div>
@@ -60,6 +98,32 @@ function onSearch() {
           <p class="mt-2 max-w-prose text-stone">
             Type part of a title in the search box, then press Enter or select Search.
           </p>
+      </section>
+      <section
+        class="mt-8 flex flex-col gap-4"
+      >
+        <div v-if="results.length === 0 && !isLoading && !errorMsg">
+          No results found.
+        </div>
+        <div v-if="isLoading">
+          <p class="text-stone">Loading...</p>
+        </div>
+        <div v-if="errorMsg">
+          <p class="text-red-600">{{ errorMsg }}</p>
+        </div>
+        <div v-if="results.length > 0">
+          <p class="text-stone">Total results: {{ results.length }}</p>
+          <div class="rounded-lg border-2 border-lichen p-4" v-for="group in results" :key="group.userId">
+            <h2 class="font-display text-lg font-semibold">User {{ group.userId }}</h2>
+            <div class="flex flex-col gap-4">
+              <div v-for="post in group.posts" :key="post.id" class="rounded-lg border-2 border-lichen p-4">
+                <h3 class="font-display text-md font-semibold">{{ post.title }}</h3>
+                <p class="text-stone">{{ post.body }}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
       </section>
     </main>
   </div>
