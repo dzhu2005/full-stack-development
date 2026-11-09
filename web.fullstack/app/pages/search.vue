@@ -1,16 +1,60 @@
 <script setup lang="ts">
 useHead({ title: 'Search posts' })
 
+interface Post {
+  userId: number
+  id: number
+  title: string
+  body: string
+}
+
+interface UserPostGroup {
+  userId: number
+  posts: Post[]
+}
+
 const route = useRoute()
 const router = useRouter()
+const config = useRuntimeConfig()
 
 const query = ref(typeof route.query.q === 'string' ? route.query.q : '')
-const submitted = computed(() => (typeof route.query.q === 'string' ? route.query.q : ''))
+const submitted = computed(() =>
+  typeof route.query.q === 'string' ? route.query.q : ''
+)
+
+const results = ref<UserPostGroup[]>([])
+const loading = ref(false)
+const error = ref('')
+
+async function searchPosts() {
+  if (!submitted.value) {
+    results.value = []
+    error.value = ''
+    return
+  }
+
+  loading.value = true
+  error.value = ''
+
+  try {
+    results.value = await $fetch<UserPostGroup[]>(
+      `${config.public.apiBase}/Post/search`,
+      { query: { q: submitted.value } }
+    )
+  } catch {
+    results.value = []
+    error.value = 'Unable to load posts. Please try again.'
+  } finally {
+    loading.value = false
+  }
+}
 
 function onSearch() {
   const q = query.value.trim()
   router.replace({ query: q ? { q } : {} })
 }
+
+watch(submitted, searchPosts, { immediate: true })
 </script>
 
 <template>
@@ -54,12 +98,45 @@ function onSearch() {
         aria-live="polite"
         class="flex min-h-80 flex-col justify-center rounded-lg border-2 border-dashed border-lichen px-6 py-10"
       >
-       <p class="font-display text-xl font-semibold">
-            Find a post
-          </p>
+        <p v-if="loading" class="font-display text-xl font-semibold">
+          Searching posts...
+        </p>
+
+        <p v-else-if="error" class="font-display text-xl font-semibold text-red-700">
+          {{ error }}
+        </p>
+
+        <template v-else-if="!submitted">
+          <p class="font-display text-xl font-semibold">Find a post</p>
           <p class="mt-2 max-w-prose text-stone">
             Type part of a title in the search box, then press Enter or select Search.
           </p>
+        </template>
+
+        <p v-else-if="results.length === 0" class="font-display text-xl font-semibold">
+          No posts found.
+        </p>
+
+        <div v-else class="space-y-6">
+          <section
+            v-for="group in results"
+            :key="group.userId"
+            class="rounded-lg border border-lichen bg-field p-5"
+          >
+            <h2 class="mb-4 font-display text-lg font-bold">
+              User {{ group.userId }}
+            </h2>
+
+            <div
+              v-for="post in group.posts"
+              :key="post.id"
+              class="border-t border-lichen py-4"
+            >
+              <h3 class="font-semibold">{{ post.title }}</h3>
+              <p class="mt-2 text-sm text-stone">{{ post.body }}</p>
+            </div>
+          </section>
+        </div>
       </section>
     </main>
   </div>
