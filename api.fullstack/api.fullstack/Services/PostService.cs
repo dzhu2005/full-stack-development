@@ -22,16 +22,23 @@ public class PostService : IPostService
     }
 
     /// <inheritdoc />
+    /// <remarks>
+    /// The posts are already in memory after the download, so this is plain LINQ to Objects
+    /// over <see cref="IEnumerable{T}"/> (IQueryable only helps when a provider such as EF Core
+    /// can run the query at the data source). The result is materialized once with
+    /// <c>ToArray()</c> so the query does not run again during JSON serialization, and arrays
+    /// are used because nothing modifies the collections afterwards.
+    /// </remarks>
     public async Task<IReadOnlyList<UserPosts>> SearchByTitleAsync(string term, CancellationToken cancellationToken = default)
     {
-        var posts = await GetPostsAsync(cancellationToken);
+        IEnumerable<Post> posts = await GetPostsAsync(cancellationToken);
 
         return posts
             .Where(post => post.Title.Contains(term, StringComparison.OrdinalIgnoreCase))
             .GroupBy(post => post.UserId)
             .OrderBy(group => group.Key)
-            .Select(group => new UserPosts(group.Key, group.ToList()))
-            .ToList();
+            .Select(group => new UserPosts(group.Key, group.ToArray()))
+            .ToArray();
     }
 
     /// <summary>
@@ -39,10 +46,10 @@ public class PostService : IPostService
     /// Throws <see cref="HttpRequestException"/> when the response is not successful.
     /// </summary>
     /// <param name="cancellationToken">Cancels the HTTP call.</param>
-    /// <returns>All posts, or an empty list when the body is empty.</returns>
-    private async Task<List<Post>> GetPostsAsync(CancellationToken cancellationToken)
+    /// <returns>All posts, or an empty array when the body is empty.</returns>
+    private async Task<Post[]> GetPostsAsync(CancellationToken cancellationToken)
     {
-        var posts = await _httpClient.GetFromJsonAsync<List<Post>>("posts", cancellationToken);
+        var posts = await _httpClient.GetFromJsonAsync<Post[]>("posts", cancellationToken);
         return posts ?? [];
     }
 }
