@@ -5,6 +5,12 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
   css: ['~/assets/css/main.css'],
+  runtimeConfig: {
+    public: {
+      // Base URL of the ASP.NET Core API. Override with NUXT_PUBLIC_API_BASE_URL.
+      apiBaseUrl: 'http://localhost:5286'
+    }
+  },
   app: {
     head: {
       link: [
