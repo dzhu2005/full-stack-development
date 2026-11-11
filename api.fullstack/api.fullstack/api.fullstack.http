@@ -1,6 +1,15 @@
 @api.fullstack_HostAddress = http://localhost:5286
 
-GET {{api.fullstack_HostAddress}}/weatherforecast/
+### Search posts by title (grouped by user)
+GET {{api.fullstack_HostAddress}}/Post/search?q=qui
+Accept: application/json
+
+### No matches -> empty array
+GET {{api.fullstack_HostAddress}}/Post/search?q=zzzz
+Accept: application/json
+
+### Missing term -> 400 Bad Request
+GET {{api.fullstack_HostAddress}}/Post/search?q=
 Accept: application/json
 
 ###
